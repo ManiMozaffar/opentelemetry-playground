@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import json
 from typing import Awaitable, Callable, ParamSpec, TypeVar
 
 from opentelemetry import trace
@@ -23,6 +24,11 @@ class SyncSpanCtx:
             with self.tracer.start_as_current_span(
                 f"func ${func.__qualname__}", kind=self.kind
             ) as parent:
+                func_args = {
+                    "args": [arg for arg in args],
+                    "kwargs": {key: str(value) for key, value in kwargs.items()},
+                }
+                parent.set_attribute("arg", json.dumps(func_args))
                 out = func(*args, **kwargs)
                 attr = "null" if out is None else out
                 parent.set_attribute("result", attr)
@@ -41,9 +47,14 @@ class AsyncSpanCtx:
     def __call__(self, func: AsyncFunc) -> AsyncFunc:
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            func_args = {
+                "args": [arg for arg in args],
+                "kwargs": {key: str(value) for key, value in kwargs.items()},
+            }
             with self.tracer.start_as_current_span(
                 f"func ${func.__qualname__}", kind=self.kind
             ) as parent:
+                parent.set_attribute("arg", json.dumps(func_args))
                 out = await func(*args, **kwargs)
                 attr = "null" if out is None else out
                 parent.set_attribute("result", attr)

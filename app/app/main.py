@@ -1,3 +1,5 @@
+from time import sleep
+
 from opentelemetry.trace import SpanKind
 
 from app.setup import setup_otel
@@ -17,11 +19,13 @@ def unit_of_work(foo: int, bar: int):
 
 @with_span(SpanKind.CLIENT)
 def _sum(foo: int, bar: int):
+    sleep(1)
     return foo + bar
 
 
 @with_span(SpanKind.CLIENT)
 def multiply(foo: int, bar: int):
+    sleep(0.5)
     return foo * bar
 
 
@@ -34,6 +38,7 @@ def main():
     )
     unit_of_work(3, 4)
     unit_of_work(7, 2)
+    print("Done!")
 
 
 if __name__ == "__main__":
